@@ -1,18 +1,19 @@
 extends Control
 
-onready var d = {1:$Level1,2:$Level2,3:$Level3} #dictionary for level cues
-export var bpm = 60 #bpm of music cues
-export var bar_subdivision = 4 #the metric subdivision of a bar (4/4, 3/4, etc)
-export var n_bars = 4 #n of bars in the cues
+@onready var d = {1:$Level1,2:$Level2,3:$Level3} #dictionary for level cues
+@export var bpm = 60 #bpm of music cues
+@export var bar_subdivision = 4 #the metric subdivision of a bar (4/4, 3/4, etc)
+@export var n_bars = 4 #n of bars in the cues
 
-onready var transition_q = 4 #the beats needed to perform a transition
+@onready var transition_q = 4 #the beats needed to perform a transition
 
-export var transition_duration = 0.5 #seconds
+@export var transition_duration = 0.5 #seconds
 var transition_type = 3 #Quadratic curve for Equal power crossfade
 
 var last_cue = null #holds the last cue played
 var new_cue = null #holds the new cue to play
 var current_cue_position = 0
+var current_cue = null#temp var for timer
 
 var timer = Timer.new() #timer for new cue
 var timer_stinger = Timer.new() #timer for stinger
@@ -41,24 +42,31 @@ func _on_level3_pressed():
 	play_cue(3)
 
 func fade_out(stream_player):
-	$TweenOut.interpolate_property(stream_player, "volume_db", music_volume, -80, transition_duration, transition_type, Tween.EASE_IN, 0)
-	$TweenOut.start()
+	var TweenOut = get_tree().create_tween()
+	TweenOut.set_trans(transition_type)
+	TweenOut.set_ease(Tween.EASE_IN)
+	stream_player.volume_db = music_volume
+	TweenOut.tween_property(stream_player, "volume_db",  -80, transition_duration)
+	TweenOut.tween_callback(stream_player.stop)
 	
 func fade_in(stream_player):
 	stream_player.play(current_cue_position);
 	if last_cue!=null:
-		$TweenIn.interpolate_property(stream_player, "volume_db", -80, music_volume, transition_duration, transition_type, Tween.EASE_OUT, 0)
-		$TweenIn.start()
+		var TweenIn = get_tree().create_tween()
+		TweenIn.set_trans(transition_type)
+		TweenIn.set_ease(Tween.EASE_OUT)
+		stream_player.volume_db = -80
+		TweenIn.tween_property(stream_player, "volume_db",  music_volume, transition_duration)
 		
 func duck(stream_player):
 	stream_player.volume_db-=music_volume_duck;
 
-func _on_TweenOut_tween_completed(object, key):
-	# stop the music -- otherwise it continues to run at silent volume
-	object.stop()
+#func _on_TweenOut_tween_completed(object, key):
+#	# stop the music -- otherwise it continues to run at silent volume
+#	object.stop()
 	
-func _on_TweenIn_tween_completed(object, key):
-	pass
+#func _on_TweenIn_tween_completed(object, key):
+#	pass
 
 func play_cue(cue):	
 	
@@ -87,7 +95,7 @@ func play_cue(cue):
 			if time_to_stinger>0: 
 				timer_stinger.wait_time = time_to_stinger
 				timer_stinger.one_shot = true
-				timer_stinger.connect("timeout",self,"play_stinger")
+				timer_stinger.connect("timeout", Callable(self, "play_stinger"))
 				add_child(timer_stinger)
 				timer_stinger.start()
 		
@@ -99,10 +107,14 @@ func play_cue(cue):
 		print("time to end q "+str(time_to_end_q))
 		timer.wait_time = time_to_end_q
 		timer.one_shot = true
-		timer.connect("timeout",self,"play",[cue])
+		current_cue = cue
+		timer.connect("timeout", Callable(self, "on_cue_timeout"))
 		add_child(timer)
 		timer.start()
 
+func on_cue_timeout():
+	play(current_cue)
+	
 func current_pos():
 	if last_cue!=null:
 		#get position of music in the playing cue so you know where to start next cue

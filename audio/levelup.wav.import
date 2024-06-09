@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/levelup.wav-bfed737920b164a4cdde975703c682ab.sample"
+type="AudioStreamWAV"
+uid="uid://cjw4w7eu45p7n"
+path="res://.godot/imported/levelup.wav-bfed737920b164a4cdde975703c682ab.sample"
 
 [deps]
 
 source_file="res://audio/levelup.wav"
-dest_files=[ "res://.import/levelup.wav-bfed737920b164a4cdde975703c682ab.sample" ]
+dest_files=["res://.godot/imported/levelup.wav-bfed737920b164a4cdde975703c682ab.sample"]
 
 [params]
 
